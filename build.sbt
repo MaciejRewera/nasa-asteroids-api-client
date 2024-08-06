@@ -22,6 +22,11 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
   "org.http4s" %% "http4s-circe" % Http4sVersion,
 
+  // Tapir
+  "com.softwaremill.sttp.tapir"   %% "tapir-http4s-server" % tapirVersion,
+  "com.softwaremill.sttp.tapir"   %% "tapir-json-circe" % tapirVersion,
+  "com.softwaremill.sttp.tapir"   %% "tapir-cats" % tapirVersion,
+
   // JSON
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-literal" % circeVersion,
