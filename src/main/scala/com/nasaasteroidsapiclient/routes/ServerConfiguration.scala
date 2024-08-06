@@ -24,12 +24,6 @@ object ServerConfiguration {
       .map { case (status, _) =>
         val responseBody = context.failure match {
 
-          case _ if status == StatusCode.Unauthorized =>
-            ErrorInfo.unauthorizedErrorInfo(Some(FailureMessages.failureMessage(context)))
-
-          case _ if status == StatusCode.Forbidden =>
-            ErrorInfo.forbiddenErrorInfo(Some(FailureMessages.failureMessage(context)))
-
           case _ if status == StatusCode.NotFound =>
             ErrorInfo.notFoundErrorInfo(Some(FailureMessages.failureMessage(context)))
 

@@ -1,9 +1,9 @@
 package com.nasaasteroidsapiclient.routes
 
 import cats.effect.IO
-import cats.implicits.catsSyntaxEitherId
+import cats.implicits.{catsSyntaxEitherId, toSemigroupKOps}
 import com.nasaasteroidsapiclient.routes.definitions.NeoEndpoints
-import com.nasaasteroidsapiclient.routes.models.GetNeosFeedResponse
+import com.nasaasteroidsapiclient.routes.models.{GetNeosFeedResponse, GetSingleNeoResponse}
 import com.nasaasteroidsapiclient.services.NeoService
 import org.http4s.HttpRoutes
 import sttp.model.StatusCode
@@ -24,5 +24,19 @@ class NeoRoutes(neoService: NeoService) {
         }
       )
 
-  val allRoutes: HttpRoutes[IO] = getNeosFeedRoutes
+  private val getSingleNeoRoutes: HttpRoutes[IO] =
+    serverInterpreter
+      .toRoutes(
+        NeoEndpoints.singleNeoFetchEndpoint.serverLogic { neoReferenceId =>
+          neoService.getSingleNeo(neoReferenceId).map {
+            case Some(neoData) =>
+              (StatusCode.Ok -> GetSingleNeoResponse.from(neoData)).asRight
+
+            case None =>
+              ErrorInfo.notFoundErrorInfo(Some("No NEO with provided neoReferenceId found.")).asLeft
+          }
+        }
+      )
+
+  val allRoutes: HttpRoutes[IO] = getNeosFeedRoutes <+> getSingleNeoRoutes
 }
