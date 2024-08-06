@@ -99,9 +99,58 @@ class NasaNeoApiConnectorSpec
       stubUri(feedUrl)(200, responseJsonEmpty)
 
       for {
-        _ <- nasaNeoApiConnectorRes.use(_.fetchNeos())
+        _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(None, None))
         _ = verify(1, getRequestedFor(urlPathEqualTo(feedUrl)).withQueryParam("api_key", equalTo(ApiKey)))
       } yield ()
+    }
+
+    "call Nasa NEO API, providing optional query parameters" when {
+
+      val startDateStr = "2024-08-06"
+      val endDateStr = "2024-08-10"
+
+      "provided with start date" in {
+        stubUri(feedUrl)(200, responseJsonEmpty)
+
+        for {
+          _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(Some(startDateStr), None))
+          _ = verify(
+            1,
+            getRequestedFor(urlPathEqualTo(feedUrl))
+              .withQueryParam("api_key", equalTo(ApiKey))
+              .withQueryParam("start_date", equalTo(startDateStr))
+          )
+        } yield ()
+      }
+
+      "provided with end date" in {
+        stubUri(feedUrl)(200, responseJsonEmpty)
+
+        for {
+          _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(None, Some(endDateStr)))
+          _ = verify(
+            1,
+            getRequestedFor(urlPathEqualTo(feedUrl))
+              .withQueryParam("api_key", equalTo(ApiKey))
+              .withQueryParam("end_date", equalTo(endDateStr))
+          )
+        } yield ()
+      }
+
+      "provided with both start and end date" in {
+        stubUri(feedUrl)(200, responseJsonEmpty)
+
+        for {
+          _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(Some(startDateStr), Some(endDateStr)))
+          _ = verify(
+            1,
+            getRequestedFor(urlPathEqualTo(feedUrl))
+              .withQueryParam("api_key", equalTo(ApiKey))
+              .withQueryParam("start_date", equalTo(startDateStr))
+              .withQueryParam("end_date", equalTo(endDateStr))
+          )
+        } yield ()
+      }
     }
   }
 
@@ -125,7 +174,7 @@ class NasaNeoApiConnectorSpec
 
         stubUri(feedUrl)(400, responseJsonIncorrect)
 
-        nasaNeoApiConnectorRes.use(_.fetchNeos()).attempt.asserting { result =>
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).attempt.asserting { result =>
           result.isLeft shouldBe true
           result.left.value shouldBe a[NeosFeedException]
           result.left.value.getMessage should include("Call to obtain NEOs feed failed.")
@@ -137,7 +186,7 @@ class NasaNeoApiConnectorSpec
       "return empty list" in {
         stubUri(feedUrl)(200, responseJsonEmpty)
 
-        nasaNeoApiConnectorRes.use(_.fetchNeos()).asserting(_.neos shouldBe List.empty[NeoData])
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List.empty[NeoData])
       }
     }
 
@@ -145,7 +194,7 @@ class NasaNeoApiConnectorSpec
       "return this NEO" in {
         stubUri(feedUrl)(200, responseJsonSingleNeo)
 
-        nasaNeoApiConnectorRes.use(_.fetchNeos()).asserting(_.neos shouldBe List(neo_1))
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List(neo_1))
       }
     }
 
@@ -154,7 +203,7 @@ class NasaNeoApiConnectorSpec
         stubUri(feedUrl)(200, responseJsonMultipleNeos)
 
         nasaNeoApiConnectorRes
-          .use(_.fetchNeos())
+          .use(_.fetchNeos(None, None))
           .asserting(_.neos should contain theSameElementsAs List(neo_1, neo_2, neo_3))
       }
     }
