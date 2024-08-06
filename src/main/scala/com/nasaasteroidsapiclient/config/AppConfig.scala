@@ -13,7 +13,6 @@ case class AppConfig(
     nasaNeoApi: NasaNeoApiConfig
 )
 
-
 object AppConfig {
 
   import io.circe.generic.auto._

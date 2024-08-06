@@ -27,7 +27,7 @@ object Application extends IOApp.Simple {
       config <- Resource
         .eval(ConfigSource.default.load[AppConfig] match {
           case Left(failures) => IO.raiseError(new RuntimeException(failures.prettyPrint()))
-          case Right(config) => IO.pure(config)
+          case Right(config)  => IO.pure(config)
         })
 
       httpClient <- BlazeClientBuilder[IO].withConnectTimeout(1.minute).withIdleTimeout(5.minutes).resource
