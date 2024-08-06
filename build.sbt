@@ -1,3 +1,5 @@
+import scala.collection.Seq
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := "2.13.14"
 
@@ -41,4 +43,14 @@ lazy val root = (project in file("."))
   .settings(
     name := "nasa-asteroids-api-client",
     scalafmtOnCompile := true
+  )
+
+lazy val it = (project in file("integration-tests"))
+  .dependsOn(root % "compile->compile;test->test")
+  .settings(
+    Test / parallelExecution := false,
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion % Test,
+      "com.github.tomakehurst" % "wiremock" % "3.0.1" % Test
+    )
   )
