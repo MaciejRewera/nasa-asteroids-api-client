@@ -34,6 +34,7 @@ libraryDependencies ++= Seq(
   // Config
   "com.github.pureconfig" %% "pureconfig" % pureConfigVersion,
   "com.github.pureconfig" %% "pureconfig-http4s" % pureConfigVersion,
+  "com.github.pureconfig" %% "pureconfig-ip4s" % pureConfigVersion,
 
   // Logger
   "ch.qos.logback" % "logback-classic" % "1.5.6",
