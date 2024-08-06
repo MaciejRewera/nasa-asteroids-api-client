@@ -4,8 +4,8 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{IO, Resource}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import com.nasaasteroidsapiclient.base.IntegrationTestData.JsonStrings.{neoJson_1, neoJson_2, neoJson_3}
-import com.nasaasteroidsapiclient.base.IntegrationTestData.{neoDataHeader_1, neoDataHeader_2, neoDataHeader_3}
+import com.nasaasteroidsapiclient.base.TestData.JsonStrings._
+import com.nasaasteroidsapiclient.base.TestData._
 import com.nasaasteroidsapiclient.base.WireMockIntegrationSpec
 import com.nasaasteroidsapiclient.config.NasaNeoApiConfig
 import com.nasaasteroidsapiclient.connectors.NasaNeoApiConnector.{NeoFetchException, NeosFeedException}

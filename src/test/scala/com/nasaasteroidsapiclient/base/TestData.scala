@@ -2,7 +2,7 @@ package com.nasaasteroidsapiclient.base
 
 import com.nasaasteroidsapiclient.model.NeoDataHeader
 
-object IntegrationTestData {
+object TestData {
 
   val neoDataHeader_1: NeoDataHeader = NeoDataHeader(neoReferenceId = "2523661", name = "523661 (2012 LF11)")
   val neoDataHeader_2: NeoDataHeader = NeoDataHeader(neoReferenceId = "3275974", name = "(2005 GN22)")
