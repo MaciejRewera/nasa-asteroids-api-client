@@ -1,18 +1,20 @@
 package com.nasaasteroidsapiclient.model
 
+import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, HCursor}
 
 case class NeoData(
-    neoReferenceId: String,
-    name: String
+    header: NeoDataHeader,
+    data: String
 )
 
 object NeoData {
 
   implicit val decoder: Decoder[NeoData] = (cursor: HCursor) =>
-    for {
-      ref <- cursor.get[String]("neo_reference_id")
-      name <- cursor.get[String]("name")
-    } yield NeoData(ref, name)
-
+    NeoDataHeader.decoder.apply(cursor).map { dataHeader =>
+      NeoData(
+        header = dataHeader,
+        data = cursor.top.asJson.spaces2
+      )
+    }
 }

@@ -5,11 +5,12 @@ import cats.effect.{IO, Resource}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.nasaasteroidsapiclient.base.IntegrationTestData.JsonStrings.{neoJson_1, neoJson_2, neoJson_3}
-import com.nasaasteroidsapiclient.base.IntegrationTestData.{neo_1, neo_2, neo_3}
+import com.nasaasteroidsapiclient.base.IntegrationTestData.{neoDataHeader_1, neoDataHeader_2, neoDataHeader_3}
 import com.nasaasteroidsapiclient.base.WireMockIntegrationSpec
 import com.nasaasteroidsapiclient.config.NasaNeoApiConfig
-import com.nasaasteroidsapiclient.connectors.NasaNeoApiConnector.NeosFeedException
-import com.nasaasteroidsapiclient.model.NeoData
+import com.nasaasteroidsapiclient.connectors.NasaNeoApiConnector.{NeoFetchException, NeosFeedException}
+import com.nasaasteroidsapiclient.model.{NeoData, NeoDataHeader}
+import io.circe.parser
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
@@ -33,6 +34,7 @@ class NasaNeoApiConnectorSpec
     BlazeClientBuilder[IO].resource.map(new NasaNeoApiConnector(nasaNeoApiConfig, _))
 
   private val feedUrl = "/feed"
+  private def lookupUrl(neoReferenceId: String) = s"/neo/$neoReferenceId"
 
   private def stubUri(uri: String)(responseStatus: Int, responseBody: String): StubMapping =
     stubFor(
@@ -45,7 +47,7 @@ class NasaNeoApiConnectorSpec
         )
     )
 
-  private val responseJsonEmpty =
+  private val feedResponseJsonEmpty =
     s"""{
        |    "links": {
        |		"next": "http://api.nasa.gov/neo/rest/v1/feed?start_date=2024-08-13&end_date=2024-08-20&detailed=false&api_key=DEMO_KEY",
@@ -57,7 +59,7 @@ class NasaNeoApiConnectorSpec
        |}
        |""".stripMargin
 
-  private val responseJsonSingleNeo =
+  private val feedResponseJsonSingleNeo =
     s"""{
        |    "links": {
        |		"next": "http://api.nasa.gov/neo/rest/v1/feed?start_date=2024-08-13&end_date=2024-08-20&detailed=false&api_key=DEMO_KEY",
@@ -73,7 +75,7 @@ class NasaNeoApiConnectorSpec
        |}
        |""".stripMargin
 
-  private val responseJsonMultipleNeos =
+  private val feedResponseJsonMultipleNeos =
     s"""{
        |    "links": {
        |		"next": "http://api.nasa.gov/neo/rest/v1/feed?start_date=2024-08-13&end_date=2024-08-20&detailed=false&api_key=DEMO_KEY",
@@ -96,7 +98,7 @@ class NasaNeoApiConnectorSpec
   "NasaNeoApiConnector on fetchAsteroidsList" should {
 
     "call Nasa NEO API, providing mandatory API key query parameter" in {
-      stubUri(feedUrl)(200, responseJsonEmpty)
+      stubUri(feedUrl)(200, feedResponseJsonEmpty)
 
       for {
         _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(None, None))
@@ -110,7 +112,7 @@ class NasaNeoApiConnectorSpec
       val endDateStr = "2024-08-10"
 
       "provided with start date" in {
-        stubUri(feedUrl)(200, responseJsonEmpty)
+        stubUri(feedUrl)(200, feedResponseJsonEmpty)
 
         for {
           _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(Some(startDateStr), None))
@@ -124,7 +126,7 @@ class NasaNeoApiConnectorSpec
       }
 
       "provided with end date" in {
-        stubUri(feedUrl)(200, responseJsonEmpty)
+        stubUri(feedUrl)(200, feedResponseJsonEmpty)
 
         for {
           _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(None, Some(endDateStr)))
@@ -138,7 +140,7 @@ class NasaNeoApiConnectorSpec
       }
 
       "provided with both start and end date" in {
-        stubUri(feedUrl)(200, responseJsonEmpty)
+        stubUri(feedUrl)(200, feedResponseJsonEmpty)
 
         for {
           _ <- nasaNeoApiConnectorRes.use(_.fetchNeos(Some(startDateStr), Some(endDateStr)))
@@ -157,7 +159,7 @@ class NasaNeoApiConnectorSpec
   "NasaNeoApiConnector on fetchAsteroidsList" when {
 
     "Nasa NOE API returns incorrect JSON" should {
-      "return failed IO containing NeosFeedException" in {
+      "return failed IO containing exception" in {
         val responseJsonIncorrect =
           s"""{
              |  "near_earth_object": {
@@ -172,7 +174,27 @@ class NasaNeoApiConnectorSpec
              |}
              |""".stripMargin
 
-        stubUri(feedUrl)(400, responseJsonIncorrect)
+        stubUri(feedUrl)(200, parser.parse(responseJsonIncorrect).value.spaces2)
+
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).attempt.asserting { result =>
+          result.isLeft shouldBe true
+          result.left.value.getMessage should include(
+            s"Invalid message body: Could not decode JSON: ${parser.parse(responseJsonIncorrect).value.spaces2}"
+          )
+        }
+      }
+    }
+
+    "Nasa NEO API returns response other than 200 (OK)" should {
+      "return failed IO containing NeosFeedException" in {
+        stubFor(
+          get(urlPathEqualTo(feedUrl))
+            .withQueryParam("api_key", equalTo(ApiKey))
+            .willReturn(
+              aResponse()
+                .withStatus(400)
+            )
+        )
 
         nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).attempt.asserting { result =>
           result.isLeft shouldBe true
@@ -184,29 +206,116 @@ class NasaNeoApiConnectorSpec
 
     "Nasa NEO API returns NO NEOs" should {
       "return empty list" in {
-        stubUri(feedUrl)(200, responseJsonEmpty)
+        stubUri(feedUrl)(200, feedResponseJsonEmpty)
 
-        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List.empty[NeoData])
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List.empty[NeoDataHeader])
       }
     }
 
     "Nasa NEO API returns single NEO" should {
       "return this NEO" in {
-        stubUri(feedUrl)(200, responseJsonSingleNeo)
+        stubUri(feedUrl)(200, feedResponseJsonSingleNeo)
 
-        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List(neo_1))
+        nasaNeoApiConnectorRes.use(_.fetchNeos(None, None)).asserting(_.neos shouldBe List(neoDataHeader_1))
       }
     }
 
     "Nasa NEO API returns multiple NEOs" should {
       "return all these NEOs" in {
-        stubUri(feedUrl)(200, responseJsonMultipleNeos)
+        stubUri(feedUrl)(200, feedResponseJsonMultipleNeos)
 
         nasaNeoApiConnectorRes
           .use(_.fetchNeos(None, None))
-          .asserting(_.neos should contain theSameElementsAs List(neo_1, neo_2, neo_3))
+          .asserting(_.neos should contain theSameElementsAs List(neoDataHeader_1, neoDataHeader_2, neoDataHeader_3))
       }
     }
   }
 
+  "NasaNeoApiConnector on fetchSingleNeo" should {
+    "call Nasa NEO API, providing NEO reference ID and mandatory API key query parameter" in {
+      val url = lookupUrl("2523661")
+      stubUri(url)(200, neoJson_1)
+
+      for {
+        _ <- nasaNeoApiConnectorRes.use(_.fetchSingleNeo("2523661"))
+        _ = verify(1, getRequestedFor(urlPathEqualTo(url)).withQueryParam("api_key", equalTo(ApiKey)))
+      } yield ()
+    }
+  }
+
+  "NasaNeoApiConnector on fetchSingleNeo" when {
+
+    val neoReferenceId = "2523661"
+    val url = lookupUrl("2523661")
+
+    "Nasa NOE API returns incorrect JSON" should {
+      "return failed IO containing exception" in {
+        val responseJsonIncorrect =
+          s"""{
+             |  "id": $neoReferenceId,
+             |	"neo_id": "2523661",
+             |	"name": "523661 (2012 LF11)"
+             |}
+             |""".stripMargin
+
+        stubUri(url)(200, parser.parse(responseJsonIncorrect).value.spaces2)
+
+        nasaNeoApiConnectorRes.use(_.fetchSingleNeo(neoReferenceId)).attempt.asserting { result =>
+          result.isLeft shouldBe true
+          result.left.value.getMessage should include(
+            s"Invalid message body: Could not decode JSON: ${parser.parse(responseJsonIncorrect).value.spaces2}"
+          )
+        }
+      }
+    }
+
+    "Nasa NEO API returns response other than 200 (OK)" should {
+      "return failed IO containing NeoFetchException" in {
+        stubFor(
+          get(urlPathEqualTo(url))
+            .withQueryParam("api_key", equalTo(ApiKey))
+            .willReturn(
+              aResponse()
+                .withStatus(400)
+            )
+        )
+
+        nasaNeoApiConnectorRes.use(_.fetchSingleNeo(neoReferenceId)).attempt.asserting { result =>
+          result.isLeft shouldBe true
+          result.left.value shouldBe a[NeoFetchException]
+          result.left.value.getMessage should include(
+            s"Call to obtain NEO data failed for NEO reference ID: $neoReferenceId."
+          )
+        }
+      }
+    }
+
+    "Nasa NEO API returns 404 Not Found (no NEO found)" should {
+      "return empty Option" in {
+        stubFor(
+          get(urlPathEqualTo(url))
+            .withQueryParam("api_key", equalTo(ApiKey))
+            .willReturn(
+              aResponse()
+                .withStatus(404)
+            )
+        )
+
+        nasaNeoApiConnectorRes.use(_.fetchSingleNeo(neoReferenceId)).asserting(_ shouldBe None)
+      }
+    }
+
+    "Nasa NEO API returns data" should {
+      "return Option containing NeoData" in {
+        stubUri(url)(200, neoJson_1)
+
+        val expectedNeoData = NeoData(
+          header = neoDataHeader_1,
+          data = parser.parse(neoJson_1).value.spaces2
+        )
+
+        nasaNeoApiConnectorRes.use(_.fetchSingleNeo(neoReferenceId)).asserting(_ shouldBe Some(expectedNeoData))
+      }
+    }
+  }
 }

@@ -1,12 +1,12 @@
 package com.nasaasteroidsapiclient.base
 
-import com.nasaasteroidsapiclient.model.NeoData
+import com.nasaasteroidsapiclient.model.NeoDataHeader
 
 object IntegrationTestData {
 
-  val neo_1: NeoData = NeoData(neoReferenceId = "2523661", name = "523661 (2012 LF11)")
-  val neo_2: NeoData = NeoData(neoReferenceId = "3275974", name = "(2005 GN22)")
-  val neo_3: NeoData = NeoData(neoReferenceId = "2414772", name = "414772 (2010 OC103)")
+  val neoDataHeader_1: NeoDataHeader = NeoDataHeader(neoReferenceId = "2523661", name = "523661 (2012 LF11)")
+  val neoDataHeader_2: NeoDataHeader = NeoDataHeader(neoReferenceId = "3275974", name = "(2005 GN22)")
+  val neoDataHeader_3: NeoDataHeader = NeoDataHeader(neoReferenceId = "2414772", name = "414772 (2010 OC103)")
 
   object JsonStrings {
 
