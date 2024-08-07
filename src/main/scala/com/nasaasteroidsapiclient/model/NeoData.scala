@@ -1,11 +1,11 @@
 package com.nasaasteroidsapiclient.model
 
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, HCursor}
+import io.circe.{Decoder, HCursor, Json}
 
 case class NeoData(
     header: NeoDataHeader,
-    data: String
+    data: Json
 )
 
 object NeoData {
@@ -14,7 +14,7 @@ object NeoData {
     NeoDataHeader.decoder.apply(cursor).map { dataHeader =>
       NeoData(
         header = dataHeader,
-        data = cursor.top.asJson.spaces2
+        data = cursor.top.asJson
       )
     }
 }

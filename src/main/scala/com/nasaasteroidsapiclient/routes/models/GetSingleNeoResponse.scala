@@ -1,12 +1,12 @@
 package com.nasaasteroidsapiclient.routes.models
 
 import com.nasaasteroidsapiclient.model.NeoData
-import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Json}
 
 case class GetSingleNeoResponse(
     header: GetNeosFeedSingleElement,
-    data: String
+    data: Json
 )
 
 object GetSingleNeoResponse {

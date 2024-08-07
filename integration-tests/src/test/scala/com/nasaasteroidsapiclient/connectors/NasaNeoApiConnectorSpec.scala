@@ -69,7 +69,7 @@ class NasaNeoApiConnectorSpec
        |	"element_count": 1,
        |	"near_earth_objects": {
        |      "2024-08-06": [
-       |        $neoJson_1
+       |        $neoJsonStr_1
        |      ]
        |    }
        |}
@@ -85,11 +85,11 @@ class NasaNeoApiConnectorSpec
        |	"element_count": 3,
        |	"near_earth_objects": {
        |      "2024-08-06": [
-       |        $neoJson_1,
-       |        $neoJson_2
+       |        $neoJsonStr_1,
+       |        $neoJsonStr_2
        |      ],
        |      "2024-08-10": [
-       |        $neoJson_3
+       |        $neoJsonStr_3
        |      ]
        |    }
        |}
@@ -164,11 +164,11 @@ class NasaNeoApiConnectorSpec
           s"""{
              |  "near_earth_object": {
              |      "2024-08-06": [
-             |        $neoJson_1,
-             |        $neoJson_2
+             |        $neoJsonStr_1,
+             |        $neoJsonStr_2
              |      ],
              |      "2024-08-10": [
-             |        $neoJson_3
+             |        $neoJsonStr_3
              |      ]
              |    }
              |}
@@ -234,7 +234,7 @@ class NasaNeoApiConnectorSpec
   "NasaNeoApiConnector on fetchSingleNeo" should {
     "call Nasa NEO API, providing NEO reference ID and mandatory API key query parameter" in {
       val url = lookupUrl("2523661")
-      stubUri(url)(200, neoJson_1)
+      stubUri(url)(200, neoJsonStr_1)
 
       for {
         _ <- nasaNeoApiConnectorRes.use(_.fetchSingleNeo("2523661"))
@@ -307,11 +307,11 @@ class NasaNeoApiConnectorSpec
 
     "Nasa NEO API returns data" should {
       "return Option containing NeoData" in {
-        stubUri(url)(200, neoJson_1)
+        stubUri(url)(200, neoJsonStr_1)
 
         val expectedNeoData = NeoData(
           header = neoDataHeader_1,
-          data = parser.parse(neoJson_1).value.spaces2
+          data = parser.parse(neoJsonStr_1).value
         )
 
         nasaNeoApiConnectorRes.use(_.fetchSingleNeo(neoReferenceId)).asserting(_ shouldBe Some(expectedNeoData))
