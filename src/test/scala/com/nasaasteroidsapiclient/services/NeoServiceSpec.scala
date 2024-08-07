@@ -2,7 +2,6 @@ package com.nasaasteroidsapiclient.services
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.nasaasteroidsapiclient.base.TestData.JsonStrings.neoJson_1
 import com.nasaasteroidsapiclient.base.TestData._
 import com.nasaasteroidsapiclient.connectors.NasaNeoApiConnector
 import com.nasaasteroidsapiclient.model.{NeoData, NeosDataList}

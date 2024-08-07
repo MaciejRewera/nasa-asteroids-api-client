@@ -1,16 +1,22 @@
 package com.nasaasteroidsapiclient.base
 
 import com.nasaasteroidsapiclient.model.NeoDataHeader
+import io.circe.{Json, parser}
+import org.scalatest.EitherValues
 
-object TestData {
+object TestData extends EitherValues {
 
   val neoDataHeader_1: NeoDataHeader = NeoDataHeader(neoReferenceId = "2523661", name = "523661 (2012 LF11)")
   val neoDataHeader_2: NeoDataHeader = NeoDataHeader(neoReferenceId = "3275974", name = "(2005 GN22)")
   val neoDataHeader_3: NeoDataHeader = NeoDataHeader(neoReferenceId = "2414772", name = "414772 (2010 OC103)")
 
+  val neoJson_1: Json = parser.parse(JsonStrings.neoJsonStr_1).value
+  val neoJson_2: Json = parser.parse(JsonStrings.neoJsonStr_2).value
+  val neoJson_3: Json = parser.parse(JsonStrings.neoJsonStr_3).value
+
   object JsonStrings {
 
-    val neoJson_1: String =
+    val neoJsonStr_1: String =
       s"""{
          |	"links": {
          |		"self": "http://api.nasa.gov/neo/rest/v1/neo/2523661?api_key=DEMO_KEY"
@@ -62,7 +68,7 @@ object TestData {
          |}
          |""".stripMargin
 
-    val neoJson_2: String =
+    val neoJsonStr_2: String =
       s"""{
          |	"links": {
          |		"self": "http://api.nasa.gov/neo/rest/v1/neo/3275974?api_key=DEMO_KEY"
@@ -114,7 +120,7 @@ object TestData {
          |}
          |""".stripMargin
 
-    val neoJson_3: String =
+    val neoJsonStr_3: String =
       s"""{
          |   "links": {
          |		"self": "http://api.nasa.gov/neo/rest/v1/neo/2414772?api_key=DEMO_KEY"

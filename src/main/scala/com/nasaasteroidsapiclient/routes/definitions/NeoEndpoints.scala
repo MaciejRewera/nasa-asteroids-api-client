@@ -24,6 +24,8 @@ object NeoEndpoints {
       .out(statusCode)
       .out(jsonBody[GetNeosFeedResponse])
 
+  private implicit val schemaGetSingleNeoResponse: Schema[GetSingleNeoResponse] = Schema.any[GetSingleNeoResponse]
+
   val singleNeoFetchEndpoint: Endpoint[Unit, String, ErrorInfo, (StatusCode, GetSingleNeoResponse), Any] =
     endpoint.get
       .in("neo" / path[String]("neoReferenceId"))
