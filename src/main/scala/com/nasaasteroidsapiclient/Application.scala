@@ -1,11 +1,11 @@
 package com.nasaasteroidsapiclient
 
 import cats.effect.{IO, IOApp, Resource}
-import cats.implicits.toShow
+import cats.implicits.{toSemigroupKOps, toShow}
 import com.nasaasteroidsapiclient.config.AppConfig
 import com.nasaasteroidsapiclient.connectors.NasaNeoApiConnector
-import com.nasaasteroidsapiclient.routes.NeoRoutes
-import com.nasaasteroidsapiclient.services.NeoService
+import com.nasaasteroidsapiclient.routes.{FavouritesRoutes, NeoRoutes}
+import com.nasaasteroidsapiclient.services.{FavouritesService, NeoService}
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.middleware.{Logger => ClientLogger}
 import org.http4s.ember.server.EmberServerBuilder
@@ -42,11 +42,13 @@ object Application extends IOApp.Simple {
 
         nasaNeoApiConnector: NasaNeoApiConnector = new NasaNeoApiConnector(config.nasaNeoApi, httpClient)
         neoService: NeoService = new NeoService(nasaNeoApiConnector)
-
         neoRoutes: HttpRoutes[IO] = new NeoRoutes(neoService).allRoutes
 
+        favouritesService: FavouritesService = new FavouritesService
+        favouritesRoutes: HttpRoutes[IO] = new FavouritesRoutes(favouritesService).allRoutes
+
         httpApp = CORS.policy
-          .withAllowOriginAll(neoRoutes)
+          .withAllowOriginAll(neoRoutes <+> favouritesRoutes)
           .orNotFound
 
         loggingHttpApp = ServerLogger.httpApp(logHeaders = false, logBody = true)(httpApp)
