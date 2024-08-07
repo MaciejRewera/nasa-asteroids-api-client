@@ -17,7 +17,7 @@ class NeoRoutes(neoService: NeoService) {
   private val getNeosFeedRoutes: HttpRoutes[IO] =
     serverInterpreter
       .toRoutes(
-        NeoEndpoints.neosFeedEndpoint.serverLogic { case (startDateOpt, endDateOpt) =>
+        NeoEndpoints.getNeosFeedEndpoint.serverLogic { case (startDateOpt, endDateOpt) =>
           neoService.getNeosFeed(startDateOpt, endDateOpt).map { neosDataList =>
             (StatusCode.Ok -> GetNeosFeedResponse.from(neosDataList)).asRight[Unit]
           }
@@ -27,7 +27,7 @@ class NeoRoutes(neoService: NeoService) {
   private val getSingleNeoRoutes: HttpRoutes[IO] =
     serverInterpreter
       .toRoutes(
-        NeoEndpoints.singleNeoFetchEndpoint.serverLogic { neoReferenceId =>
+        NeoEndpoints.getSingleNeoEndpoint.serverLogic { neoReferenceId =>
           neoService.getSingleNeo(neoReferenceId).map {
             case Some(neoData) =>
               (StatusCode.Ok -> GetSingleNeoResponse.from(neoData)).asRight
